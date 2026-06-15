@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? ''
+// Runtime config (injected by docker-entrypoint.sh via /config.js) takes
+// precedence over the build-time env var so the same Docker image can be
+// pointed at any API without a rebuild.
+declare global {
+  interface Window {
+    __APP_CONFIG__?: { apiUrl?: string }
+  }
+}
+const API_BASE = window.__APP_CONFIG__?.apiUrl ?? import.meta.env.VITE_API_URL ?? ''
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

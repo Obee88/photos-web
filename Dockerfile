@@ -8,18 +8,18 @@ COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+# VITE_API_URL is intentionally NOT set here — the runtime entrypoint writes
+# config.js from the API_URL env var instead, so one image works everywhere.
 RUN pnpm build
 
 # ---- runtime stage ----
 FROM nginx:1.27-alpine
 
-# Non-root: nginx official image already supports running as non-root on port 8080
-# We'll use the default nginx user
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# SPA fallback — all routes serve index.html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
