@@ -11,9 +11,49 @@ export interface ScanJob {
   phase: string | null
   total: number
   processed: number
+  new_photos: number
+  skipped_photos: number
+  is_full_scan: boolean
+  album_url: string | null
   started_at: string | null
   finished_at: string | null
   error: string | null
+}
+
+export interface PreScanInfo {
+  scanned: number       // photos with scanned_at set (fully analyzed)
+  unanalyzed: number    // photos in DB but not yet analyzed
+  last_scan_at: string | null
+}
+
+export interface GroupTypeStat {
+  total: number
+  reviewed: number
+}
+
+export interface ScanOverviewLastScan {
+  id: string
+  finished_at: string | null
+  new_photos: number
+  skipped_photos: number
+  is_full_scan: boolean
+  album_url: string | null
+}
+
+export interface ScanOverview {
+  last_scan: ScanOverviewLastScan | null
+  groups: {
+    exact_duplicate: GroupTypeStat
+    near_duplicate: GroupTypeStat
+    burst: GroupTypeStat
+  }
+  quality: {
+    blurry: number
+    bad_exposure: number
+    screenshots: number
+    total: number
+  }
+  queue_count: number
 }
 
 export interface AnalysisSummary {
@@ -43,6 +83,7 @@ export interface AnalysisGroup {
   id: string
   group_type: string
   similarity: number | null
+  reviewed_at: string | null
   photos: Photo[]
 }
 
