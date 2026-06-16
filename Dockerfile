@@ -22,4 +22,7 @@ RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 3000
 
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=30s \
+  CMD wget -qO- http://localhost:3000/ || exit 1
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
