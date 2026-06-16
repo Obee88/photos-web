@@ -20,9 +20,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-EXPOSE 3000
+EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=30s \
-  CMD wget -qO- http://localhost:3000/ || exit 1
+  CMD wget -qO- http://localhost:80/healthz || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
