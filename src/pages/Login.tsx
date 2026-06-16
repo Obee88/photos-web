@@ -1,6 +1,6 @@
 import styles from './Login.module.css'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? ''
+const API_BASE = window.__APP_CONFIG__?.apiUrl ?? import.meta.env.VITE_API_URL ?? ''
 
 export default function Login() {
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ScanJob } from '../api/types'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? ''
+const API_BASE = window.__APP_CONFIG__?.apiUrl ?? import.meta.env.VITE_API_URL ?? ''
 
 export function useScanProgress(jobId: string | null) {
   const [job, setJob] = useState<ScanJob | null>(null)

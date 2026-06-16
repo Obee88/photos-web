@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useScanProgress } from '../hooks/useScanProgress'
-import type { ScanJob } from '../api/types'
 
 interface Props {
   jobId: string
