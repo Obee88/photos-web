@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { PreScanInfo, ScanOverview } from '../api/types'
@@ -282,6 +282,11 @@ export default function Dashboard() {
   const [scanJobId, setScanJobId] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
 
+  // Holds a cancel function for the picker polling loop so it can be
+  // torn down if the component unmounts before the user finishes picking.
+  const cancelPickerRef = useRef<(() => void) | null>(null)
+  useEffect(() => () => { cancelPickerRef.current?.() }, [])
+
   const { data: overview, isLoading: overviewLoading } = useQuery<ScanOverview>({
     queryKey: ['analysis', 'scan-overview'],
     queryFn: () => api.get('/analysis/scan-overview'),
@@ -306,7 +311,69 @@ export default function Dashboard() {
     setShowDialog(false)
     setScanning(true)
     try {
-      const job = await api.post<{ id: string }>(`/scan/start?full_scan=${fullScan}`)
+      // 1. Create a Google Photos Picker session
+      const { picker_session_id, picker_uri } = await api.post<{
+        picker_session_id: string
+        picker_uri: string
+      }>('/scan/picker-session')
+
+      // 2. Open the picker in a popup for the user to select photos
+      const popup = window.open(picker_uri, 'google-photos-picker', 'width=900,height=700')
+      if (!popup) {
+        throw new Error('Popup was blocked by your browser. Please allow popups for this site and try again.')
+      }
+
+      // 3. Poll until the user finishes picking (mediaItemsSet = true)
+      const PICKER_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
+      await new Promise<void>((resolve, reject) => {
+        const deadline = Date.now() + PICKER_TIMEOUT_MS
+
+        const interval = setInterval(async () => {
+          // User closed the popup without confirming
+          if (popup.closed) {
+            clearInterval(interval)
+            cancelPickerRef.current = null
+            reject(new Error('Photo picker was closed without selecting photos. Please try again.'))
+            return
+          }
+          // Hard timeout
+          if (Date.now() > deadline) {
+            clearInterval(interval)
+            popup.close()
+            cancelPickerRef.current = null
+            reject(new Error('Picker timed out after 10 minutes. Please try again.'))
+            return
+          }
+          try {
+            const status = await api.get<{ media_items_set: boolean }>(
+              `/scan/picker-session/${picker_session_id}`
+            )
+            if (status.media_items_set) {
+              clearInterval(interval)
+              popup.close()
+              cancelPickerRef.current = null
+              resolve()
+            }
+          } catch (err) {
+            clearInterval(interval)
+            popup.close()
+            cancelPickerRef.current = null
+            reject(err)
+          }
+        }, 2000)
+
+        // Expose a cancel path so the useEffect cleanup can abort on unmount
+        cancelPickerRef.current = () => {
+          clearInterval(interval)
+          popup.close()
+          reject(new Error('Scan cancelled.'))
+        }
+      })
+
+      // 4. Start the scan with the picker session
+      const job = await api.post<{ id: string }>(
+        `/scan/start?picker_session_id=${picker_session_id}&full_scan=${fullScan}`
+      )
       setScanJobId(job.id)
     } catch (e: any) {
       alert(e.message)
