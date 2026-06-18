@@ -476,6 +476,11 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Build info */}
+      <footer style={{ marginTop: '3rem', textAlign: 'center', fontSize: '.75rem', color: '#bbb' }}>
+        build: {import.meta.env.VITE_GIT_SHA ?? 'dev'}
+      </footer>
     </div>
   )
 }

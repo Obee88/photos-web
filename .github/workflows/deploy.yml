@@ -25,6 +25,8 @@ jobs:
           tags: |
             ghcr.io/obee88/photos-web:${{ steps.meta.outputs.sha }}
             ghcr.io/obee88/photos-web:latest
+          build-args: |
+            GIT_SHA=${{ steps.meta.outputs.sha }}
       - name: Notify dashboard
         env:
           URL:    ${{ secrets.WEBHOOK_URL }}

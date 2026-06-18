@@ -10,6 +10,8 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 # VITE_API_URL is intentionally NOT set here — the runtime entrypoint writes
 # config.js from the API_URL env var instead, so one image works everywhere.
+ARG GIT_SHA=dev
+ENV VITE_GIT_SHA=$GIT_SHA
 RUN pnpm build
 
 # ---- runtime stage ----
